@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Genre Classifier</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Music Genre Classifier</h1>
+            <p class="lead">Upload an audio file to predict its genre and visualize its features</p>
+        </header>
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8">
+                <div class="card upload-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Your Music</h5>
+                        <p class="card-text">Select an MP3 or WAV file to analyze</p>
+
+                        <form id="upload-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input class="form-control" type="file" id="file-input" accept=".mp3,.wav">
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="upload-btn">Analyze</button>
+                        </form>
+
+                        <div id="loading" class="text-center mt-3 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Analyzing your music...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-container" class="d-none">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card result-card">
+                        <div class="card-body text-center">
+                            <h3>Predicted Genre: <span id="prediction-result" class="text-primary"></span></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h3 class="text-center mb-3">Audio Visualizations</h3>
+                    <ul class="nav nav-tabs" id="visualTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="waveform-tab" data-bs-toggle="tab"
+                                data-bs-target="#waveform" type="button" role="tab" aria-controls="waveform"
+                                aria-selected="true">Waveform</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="spectrogram-tab" data-bs-toggle="tab"
+                                data-bs-target="#spectrogram" type="button" role="tab" aria-controls="spectrogram"
+                                aria-selected="false">Spectrogram</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mel-spectrogram-tab" data-bs-toggle="tab"
+                                data-bs-target="#mel-spectrogram" type="button" role="tab"
+                                aria-controls="mel-spectrogram" aria-selected="false">Mel-Spectrogram</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mfcc-tab" data-bs-toggle="tab" data-bs-target="#mfcc"
+                                type="button" role="tab" aria-controls="mfcc" aria-selected="false">MFCC</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="visualTabsContent">
+                        <div class="tab-pane fade show active" id="waveform" role="tabpanel"
+                            aria-labelledby="waveform-tab">
+                            <div class="visual-container">
+                                <img id="waveform-img" class="img-fluid" alt="Waveform visualization">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="spectrogram" role="tabpanel" aria-labelledby="spectrogram-tab">
+                            <div class="visual-container">
+                                <img id="spectrogram-img" class="img-fluid" alt="Spectrogram visualization">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mel-spectrogram" role="tabpanel"
+                            aria-labelledby="mel-spectrogram-tab">
+                            <div class="visual-container">
+                                <img id="mel-spectrogram-img" class="img-fluid" alt="Mel-spectrogram visualization">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mfcc" role="tabpanel" aria-labelledby="mfcc-tab">
+                            <div class="visual-container">
+                                <img id="mfcc-img" class="img-fluid" alt="MFCC visualization">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h3 class="text-center mb-3">Model Performance</h3>
+                    <ul class="nav nav-tabs" id="performanceTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="confusion-matrix-tab" data-bs-toggle="tab"
+                                data-bs-target="#confusion-matrix" type="button" role="tab"
+                                aria-controls="confusion-matrix" aria-selected="true">Confusion Matrix</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="classification-report-tab" data-bs-toggle="tab"
+                                data-bs-target="#classification-report" type="button" role="tab"
+                                aria-controls="classification-report" aria-selected="false">Classification
+                                Report</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="roc-curve-tab" data-bs-toggle="tab" data-bs-target="#roc-curve"
+                                type="button" role="tab" aria-controls="roc-curve" aria-selected="false">ROC
+                                Curve</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="performanceTabsContent">
+                        <div class="tab-pane fade show active" id="confusion-matrix" role="tabpanel"
+                            aria-labelledby="confusion-matrix-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_confusion_matrix') }}" class="img-fluid"
+                                    alt="Confusion Matrix">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="classification-report" role="tabpanel"
+                            aria-labelledby="classification-report-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_classification_report') }}" class="img-fluid"
+                                    alt="Classification Report">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="roc-curve" role="tabpanel" aria-labelledby="roc-curve-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_roc_curve') }}" class="img-fluid" alt="ROC Curve">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h3 class="text-center mb-3">MFCC Analysis</h3>
+                    <ul class="nav nav-tabs" id="mfccAnalysisTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="mfcc-heatmap-tab" data-bs-toggle="tab"
+                                data-bs-target="#mfcc-heatmap" type="button" role="tab" aria-controls="mfcc-heatmap"
+                                aria-selected="true">MFCC Heatmap (Sample)</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mean-mfcc-tab" data-bs-toggle="tab" data-bs-target="#mean-mfcc"
+                                type="button" role="tab" aria-controls="mean-mfcc" aria-selected="false">Mean
+                                MFCCs</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="var-mfcc-tab" data-bs-toggle="tab" data-bs-target="#var-mfcc"
+                                type="button" role="tab" aria-controls="var-mfcc" aria-selected="false">MFCC
+                                Variance</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="mfccAnalysisTabsContent">
+                        <div class="tab-pane fade show active" id="mfcc-heatmap" role="tabpanel"
+                            aria-labelledby="mfcc-heatmap-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_mfcc_heatmap') }}" class="img-fluid" alt="MFCC Heatmap">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mean-mfcc" role="tabpanel" aria-labelledby="mean-mfcc-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_mean_mfcc') }}" class="img-fluid" alt="Mean MFCC">
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="var-mfcc" role="tabpanel" aria-labelledby="var-mfcc-tab">
+                            <div class="visual-container">
+                                <img src="{{ url_for('get_var_mfcc') }}" class="img-fluid" alt="MFCC Variance">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-2 mt-5 bg-light">
+        <marquee>
+            <p><b>Music Genre Classifier using Convolutional Neural Network ----- Model Test Accuracy : 0.8618 -----
+                    Model
+                    Test loss: 0.4066</b></p>
+        </marquee>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
